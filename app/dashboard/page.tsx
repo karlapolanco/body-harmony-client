@@ -85,7 +85,7 @@ export default function Dashboard() {
           ) : (
             <div style={{ display: 'grid', gap: '10px' }}>
               {ejercicios.map((a) => (
-                <div key={a.id} style={{ padding: '14px', borderRadius: '10px', border: '1px solid #E8D9CC' }}>
+                <div key={a.id} onClick={() => router.push(`/ejercicio/${a.ejercicios?.id ?? a.id}`)} style={{ padding: '14px', borderRadius: '10px', border: '1px solid #E8D9CC', cursor: 'pointer' }}>
                   <div style={{ fontWeight: 600, color: '#3D2B1F' }}>{a.ejercicios?.nombre}</div>
                   <div style={{ color: '#A08060', fontSize: '13px' }}>{a.ejercicios?.categoria} · {a.series} series · {a.repeticiones} reps</div>
                 </div>
