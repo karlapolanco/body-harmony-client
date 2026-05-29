@@ -29,9 +29,9 @@ export default function Dashboard() {
       supabase.from('perfiles').select('*').eq('id', data.user.id).single().then(({ data: p }) => {
         if (p) setPerfil(p)
         // cargar ejercicios
-        supabase.from('cliente_ejercicios').select('*, ejercicios(*)').eq('cliente_id', data.user.id).then(({ data: e }) => {
-          if (e) setEjercicios(e)
+        fetch(`https://body-harmony-admin.vercel.app/api/cliente-ejercicios?cliente_id=${data.user.id}`).then(r => r.json()).then(result => {
         })
+        if (result.data) setEjercicios(result.data)
         // cargar rutina
         fetch(`https://body-harmony-admin.vercel.app/api/rutina-semanal?cliente_id=${data.user.id}`)
           .then(r => r.json()).then(result => { if (result.data) setRutina(result.data) })
