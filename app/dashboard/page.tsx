@@ -79,7 +79,7 @@ export default function Dashboard() {
 
         {/* EJERCICIOS */}
         <div style={{ background: '#fff', borderRadius: '16px', padding: '20px', border: '1px solid #E8D9CC' }}>
-          <h2 style={{ color: '#3D2B1F', fontSize: '16px', marginBottom: '16px' }}>💪 Tus ejercicios</h2>
+          <h2 style={{ color: '#3D2B1F', fontSize: '16px', marginBottom: '16px' }}>💪 Tus ejercicios · {new Date().toLocaleDateString('es-MX', { weekday: 'long' }).charAt(0).toUpperCase() + new Date().toLocaleDateString('es-MX', { weekday: 'long' }).slice(1)}</h2>
           {ejercicios.length === 0 ? (
             <p style={{ color: '#A08060', fontSize: '14px' }}>Aún no tienes ejercicios asignados.</p>
           ) : (
