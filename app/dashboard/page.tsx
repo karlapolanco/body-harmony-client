@@ -30,8 +30,8 @@ export default function Dashboard() {
         if (p) setPerfil(p)
         // cargar ejercicios
         fetch(`https://body-harmony-admin.vercel.app/api/cliente-ejercicios?cliente_id=${data.user.id}`).then(r => r.json()).then(result => {
-        })
         if (result.data) setEjercicios(result.data)
+        })
         // cargar rutina
         fetch(`https://body-harmony-admin.vercel.app/api/rutina-semanal?cliente_id=${data.user.id}`)
           .then(r => r.json()).then(result => { if (result.data) setRutina(result.data) })
