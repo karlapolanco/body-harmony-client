@@ -29,7 +29,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#f5ede4' }}>
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8">
-          <Image src="/logo.png" alt="Body Harmony" width={370} height={370} className="object-contain" priority />
+          <Image src="/logo.png" alt="Body Harmony" width={460} height={460} className="object-contain" priority />
         </div>
         <div className="space-y-4">
           <p className="text-center text-sm mb-4" style={{ color: '#6b4c2a' }}>Inicio de sesión para usuarios</p>
