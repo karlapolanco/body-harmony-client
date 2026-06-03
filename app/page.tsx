@@ -26,7 +26,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#f5ede4' }}>
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: '#FAF0E6' }}>
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8">
           <Image src="/logo.png" alt="Body Harmony" width={460} height={460} className="object-contain" priority />
