@@ -39,7 +39,7 @@ export default function Dashboard() {
       const { data: p } = await supabase.from('perfiles').select('*').eq('id', user.id).single()
       setPerfil(p)
 
-      const { data: r } = await supabase.from('rutinas').select('*').eq('cliente_id', user.id)
+      const { data: r } = await supabase.from('rutina_semanal').select('*').eq('cliente_id', user.id)
       setRutina(r || [])
 
       const hoy = new Date().toLocaleDateString('es-MX', { weekday: 'long' })
