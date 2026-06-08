@@ -1,98 +1,159 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@supabase/supabase-js'
 
-const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+const supabase = createClient(
+  'https://mjgkznehdzpiwwqdojaz.supabase.co',
+  'sb_publishable_2M4eaPemRhZqe73PZC9NOw_xpGRDKui'
+)
 
-const colores: any = {
-  'Tren superior': '#C9A96E',
-  'Tren inferior': '#A08060',
-  'HIIT': '#e07b5a',
-  'Core': '#7ba88c',
-  'Full body': '#7a9ec0',
-  'Descanso activo': '#b8a0c8',
-  'Descanso': '#aaaaaa'
+const DIAS = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo']
+const COLORES: Record<string, string> = {
+  'Tren inferior': '#A0845C',
+  'Tren superior': '#7A9E7E',
+  'HIIT': '#D4734A',
+  'Core': '#6A9E7A',
+  'Full body': '#7A9EBE',
+  'Descanso activo': '#B07EB0',
+  'Cardio': '#C9A96E',
+}
+
+function getColor(tipo: string) {
+  return COLORES[tipo] || '#C9A96E'
 }
 
 export default function Dashboard() {
-  const [user, setUser] = useState<any>(null)
-  const [perfil, setPerfil] = useState<any>(null)
-  const [ejercicios, setEjercicios] = useState<any[]>([])
-  const [rutina, setRutina] = useState<any[]>([])
   const router = useRouter()
+  const [perfil, setPerfil] = useState<any>(null)
+  const [rutina, setRutina] = useState<any[]>([])
+  const [ejercicios, setEjercicios] = useState<any[]>([])
+  const [diaSeleccionado, setDiaSeleccionado] = useState('')
+  const [cargando, setCargando] = useState(true)
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user) { router.push('/'); return }
-      setUser(data.user)
-      supabase.from('perfiles').select('*').eq('id', data.user.id).single().then(({ data: p }) => {
-        if (p) setPerfil(p)
-        // cargar ejercicios
-        fetch(`https://body-harmony-admin.vercel.app/api/cliente-ejercicios?cliente_id=${data.user.id}`).then(r => r.json()).then(result => {
-        if (result.data) setEjercicios(result.data)
-        })
-        // cargar rutina
-        fetch(`https://body-harmony-admin.vercel.app/api/rutina-semanal?cliente_id=${data.user.id}`)
-          .then(r => r.json()).then(result => { if (result.data) setRutina(result.data) })
-      })
-    })
-  }, [])
+    async function cargar() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/'); return }
 
-  function getTipoDia(dia: string) {
-    return rutina.find(r => r.dia === dia)?.tipo || ''
-  }
+      const { data: p } = await supabase.from('perfiles').select('*').eq('id', user.id).single()
+      setPerfil(p)
+
+      const { data: r } = await supabase.from('rutinas').select('*').eq('cliente_id', user.id)
+      setRutina(r || [])
+
+      const hoy = new Date().toLocaleDateString('es-MX', { weekday: 'long' })
+      const diaHoy = hoy.charAt(0).toUpperCase() + hoy.slice(1)
+      setDiaSeleccionado(diaHoy)
+
+      const { data: e } = await supabase
+        .from('cliente_ejercicios')
+        .select('*, ejercicios(*)')
+        .eq('cliente_id', user.id)
+      setEjercicios(e || [])
+
+      setCargando(false)
+    }
+    cargar()
+  }, [])
 
   async function logout() {
     await supabase.auth.signOut()
     router.push('/')
   }
 
+  function getEjerciciosDia(dia: string) {
+    return ejercicios.filter(e => e.dia === dia)
+  }
+
+  function getTipoDia(dia: string) {
+    return rutina.find(r => r.dia === dia)?.tipo || ''
+  }
+
+  if (cargando) return (
+    <div style={{ minHeight: '100vh', background: '#FAF0E6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ color: '#3D2B1F' }}>Cargando...</p>
+    </div>
+  )
+
+  const ejerciciosDia = getEjerciciosDia(diaSeleccionado)
+  const tipoDia = getTipoDia(diaSeleccionado)
+
   return (
-    <div style={{ background: '#F5EDE4', minHeight: '100vh', padding: '24px', fontFamily: 'Georgia, serif' }}>
+    <div style={{ minHeight: '100vh', background: '#FAF0E6', padding: '24px' }}>
       <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+
+        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
           <div>
-            <h1 style={{ color: '#3D2B1F', fontSize: '22px', margin: 0 }}>Hola, {perfil?.nombre} 👋</h1>
-            <p style={{ color: '#A08060', fontSize: '13px', margin: 0 }}>{user?.email}</p>
+            <h2 style={{ color: '#3D2B1F', fontSize: '22px', margin: 0 }}>Hola, 👋</h2>
+            <p style={{ color: '#A08060', fontSize: '13px', margin: 0 }}>{perfil?.email}</p>
           </div>
           <button onClick={logout} style={{ background: 'none', border: '1px solid #C9A96E', color: '#C9A96E', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>Salir</button>
         </div>
 
-        {/* RUTINA SEMANAL */}
-        <div style={{ background: '#fff', borderRadius: '16px', padding: '20px', marginBottom: '24px', border: '1px solid #E8D9CC' }}>
-          <h2 style={{ color: '#3D2B1F', fontSize: '16px', marginBottom: '16px' }}>📅 Tu rutina semanal</h2>
-          <div style={{ display: 'grid', gap: '8px' }}>
-            {DIAS.map(dia => {
-              const tipo = getTipoDia(dia)
-              return (
-                <div key={dia} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '90px', fontWeight: 600, color: '#3D2B1F', fontSize: '14px' }}>{dia}</div>
-                  <div style={{ flex: 1, padding: '8px 14px', borderRadius: '8px', background: tipo ? colores[tipo] || '#E8D9CC' : '#F5EDE4', color: tipo ? '#fff' : '#aaa', fontSize: '14px', fontWeight: 500 }}>
-                    {tipo || '— Sin asignar —'}
-                  </div>
+        {/* Rutina semanal */}
+        <div style={{ background: '#fff', borderRadius: '16px', padding: '20px', marginBottom: '20px', border: '1px solid #E8D9CC' }}>
+          <h3 style={{ color: '#3D2B1F', fontSize: '16px', marginBottom: '16px', marginTop: 0 }}>📅 Tu rutina semanal</h3>
+          {DIAS.map(dia => {
+            const tipo = getTipoDia(dia)
+            const seleccionado = dia === diaSeleccionado
+            return (
+              <div
+                key={dia}
+                onClick={() => setDiaSeleccionado(dia)}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '8px',
+                  cursor: 'pointer',
+                }}
+              >
+                <span style={{
+                  fontWeight: seleccionado ? 700 : 400,
+                  color: seleccionado ? '#3D2B1F' : '#A08060',
+                  fontSize: '14px',
+                  width: '90px'
+                }}>{dia}</span>
+                <div style={{
+                  flex: 1,
+                  background: tipo ? getColor(tipo) : '#F0E8DE',
+                  borderRadius: '8px',
+                  padding: '10px 14px',
+                  color: tipo ? '#fff' : '#C9A96E',
+                  fontSize: '14px',
+                  border: seleccionado ? '2px solid #3D2B1F' : '2px solid transparent',
+                  transition: 'border 0.15s',
+                }}>
+                  {tipo || '— Sin asignar —'}
                 </div>
-              )
-            })}
-          </div>
+              </div>
+            )
+          })}
         </div>
 
-        {/* EJERCICIOS */}
+        {/* Ejercicios del día seleccionado */}
         <div style={{ background: '#fff', borderRadius: '16px', padding: '20px', border: '1px solid #E8D9CC' }}>
-          <h2 style={{ color: '#3D2B1F', fontSize: '16px', marginBottom: '16px' }}>💪 Tus ejercicios · {new Date().toLocaleDateString('es-MX', { weekday: 'long' }).charAt(0).toUpperCase() + new Date().toLocaleDateString('es-MX', { weekday: 'long' }).slice(1)}</h2>
-          {ejercicios.length === 0 ? (
+          <h3 style={{ color: '#3D2B1F', fontSize: '16px', marginBottom: '16px', marginTop: 0 }}>
+            💪 {diaSeleccionado} {tipoDia ? `· ${tipoDia}` : ''}
+          </h3>
+          {ejerciciosDia.length === 0 ? (
             <p style={{ color: '#A08060', fontSize: '14px' }}>Aún no tienes ejercicios asignados.</p>
           ) : (
-            <div style={{ display: 'grid', gap: '10px' }}>
-              {ejercicios.map((a) => (
-                <div key={a.id} onClick={() => router.push(`/ejercicio/${a.ejercicios?.id ?? a.id}`)} style={{ padding: '14px', borderRadius: '10px', border: '1px solid #E8D9CC', cursor: 'pointer' }}>
-                  <div style={{ fontWeight: 600, color: '#3D2B1F' }}>{a.ejercicios?.nombre}</div>
-                  <div style={{ color: '#A08060', fontSize: '13px' }}>{a.ejercicios?.categoria} · {a.series} series · {a.repeticiones} reps</div>
-                </div>
-              ))}
-            </div>
+            ejerciciosDia.map((e: any) => (
+              <div
+                key={e.id}
+                onClick={() => router.push(`/ejercicio/${e.ejercicios?.id ?? e.id}`)}
+                style={{ padding: '14px', borderRadius: '10px', border: '1px solid #E8D9CC', cursor: 'pointer', marginBottom: '10px' }}
+              >
+                <div style={{ fontWeight: 600, color: '#3D2B1F' }}>{e.ejercicios?.nombre}</div>
+                <div style={{ color: '#A08060', fontSize: '13px' }}>{e.ejercicios?.categoria} · {e.series} series · {e.repeticiones} reps</div>
+              </div>
+            ))
           )}
         </div>
+
       </div>
     </div>
   )
