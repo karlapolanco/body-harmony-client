@@ -1,6 +1,3 @@
-Perfecto, ya estás en el editor de GitHub. Ahora selecciona todo el contenido con **Cmd+A**, bórralo, y pega esto:
-
-```
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -95,6 +92,3 @@ export default function Dashboard() {
     </div>
   )
 }
-```
-
-Después haz clic en **Confirma los cambios** (botón verde arriba). 🙂
