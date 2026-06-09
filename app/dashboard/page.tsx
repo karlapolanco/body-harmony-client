@@ -9,6 +9,7 @@ const supabase = createClient(
 )
 
 const DIAS = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo']
+
 const COLORES: Record<string, string> = {
   'Tren inferior': '#A0845C',
   'Tren superior': '#7A9E7E',
@@ -19,16 +20,12 @@ const COLORES: Record<string, string> = {
   'Cardio': '#C9A96E',
 }
 
-function getColor(tipo: string) {
-  return COLORES[tipo] || '#C9A96E'
-}
-
 export default function Dashboard() {
   const router = useRouter()
   const [perfil, setPerfil] = useState<any>(null)
   const [rutina, setRutina] = useState<any[]>([])
   const [ejercicios, setEjercicios] = useState<any[]>([])
-  const [diaSeleccionado, setDiaSeleccionado] = useState('')
+  const [diaSeleccionado, setDiaSeleccionado] = useState('Lunes')
   const [cargando, setCargando] = useState(true)
 
   useEffect(() => {
@@ -39,18 +36,20 @@ export default function Dashboard() {
       const { data: p } = await supabase.from('perfiles').select('*').eq('id', user.id).single()
       setPerfil(p)
 
-      const { data: r } = await supabase.from('rutina_semanal').select('*').eq('cliente_id', user.id)
+      const { data: r } = await supabase
+        .from('rutina_semanal')
+        .select('*')
+        .eq('cliente_id', user.id)
       setRutina(r || [])
-
-      const hoy = new Date().toLocaleDateString('es-MX', { weekday: 'long' })
-      const diaHoy = hoy.charAt(0).toUpperCase() + hoy.slice(1)
-      setDiaSeleccionado(diaHoy)
 
       const { data: e } = await supabase
         .from('cliente_ejercicios')
         .select('*, ejercicios(*)')
         .eq('cliente_id', user.id)
       setEjercicios(e || [])
+
+      const hoy = new Date().toLocaleDateString('es-MX', { weekday: 'long' })
+      setDiaSeleccionado(hoy.charAt(0).toUpperCase() + hoy.slice(1))
 
       setCargando(false)
     }
@@ -62,12 +61,12 @@ export default function Dashboard() {
     router.push('/')
   }
 
-  function getEjerciciosDia(dia: string) {
-    return ejercicios.filter(e => e.dia === dia)
+  function getTipo(dia: string) {
+    return rutina.find(r => r.dia === dia)?.tipo || ''
   }
 
-  function getTipoDia(dia: string) {
-    return rutina.find(r => r.dia === dia)?.tipo || ''
+  function getEjerciciosDia(dia: string) {
+    return ejercicios.filter(e => e.dia === dia)
   }
 
   if (cargando) return (
@@ -76,14 +75,13 @@ export default function Dashboard() {
     </div>
   )
 
+  const tipoDia = getTipo(diaSeleccionado)
   const ejerciciosDia = getEjerciciosDia(diaSeleccionado)
-  const tipoDia = getTipoDia(diaSeleccionado)
 
   return (
     <div style={{ minHeight: '100vh', background: '#FAF0E6', padding: '24px' }}>
       <div style={{ maxWidth: '600px', margin: '0 auto' }}>
 
-        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
           <div>
             <h2 style={{ color: '#3D2B1F', fontSize: '22px', margin: 0 }}>Hola, 👋</h2>
@@ -92,39 +90,22 @@ export default function Dashboard() {
           <button onClick={logout} style={{ background: 'none', border: '1px solid #C9A96E', color: '#C9A96E', padding: '6px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>Salir</button>
         </div>
 
-        {/* Rutina semanal */}
         <div style={{ background: '#fff', borderRadius: '16px', padding: '20px', marginBottom: '20px', border: '1px solid #E8D9CC' }}>
           <h3 style={{ color: '#3D2B1F', fontSize: '16px', marginBottom: '16px', marginTop: 0 }}>📅 Tu rutina semanal</h3>
           {DIAS.map(dia => {
-            const tipo = getTipoDia(dia)
+            const tipo = getTipo(dia)
             const seleccionado = dia === diaSeleccionado
             return (
-              <div
-                key={dia}
-                onClick={() => setDiaSeleccionado(dia)}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '8px',
-                  cursor: 'pointer',
-                }}
-              >
-                <span style={{
-                  fontWeight: seleccionado ? 700 : 400,
-                  color: seleccionado ? '#3D2B1F' : '#A08060',
-                  fontSize: '14px',
-                  width: '90px'
-                }}>{dia}</span>
+              <div key={dia} onClick={() => setDiaSeleccionado(dia)}
+                style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', cursor: 'pointer', gap: '12px' }}>
+                <span style={{ width: '90px', fontWeight: seleccionado ? 700 : 400, color: seleccionado ? '#3D2B1F' : '#A08060', fontSize: '14px' }}>
+                  {dia}
+                </span>
                 <div style={{
-                  flex: 1,
-                  background: tipo ? getColor(tipo) : '#F0E8DE',
-                  borderRadius: '8px',
-                  padding: '10px 14px',
-                  color: tipo ? '#fff' : '#C9A96E',
-                  fontSize: '14px',
+                  flex: 1, borderRadius: '8px', padding: '10px 14px',
+                  background: tipo ? (COLORES[tipo] || '#C9A96E') : '#F0E8DE',
+                  color: tipo ? '#fff' : '#C9A96E', fontSize: '14px',
                   border: seleccionado ? '2px solid #3D2B1F' : '2px solid transparent',
-                  transition: 'border 0.15s',
                 }}>
                   {tipo || '— Sin asignar —'}
                 </div>
@@ -133,7 +114,6 @@ export default function Dashboard() {
           })}
         </div>
 
-        {/* Ejercicios del día seleccionado */}
         <div style={{ background: '#fff', borderRadius: '16px', padding: '20px', border: '1px solid #E8D9CC' }}>
           <h3 style={{ color: '#3D2B1F', fontSize: '16px', marginBottom: '16px', marginTop: 0 }}>
             💪 {diaSeleccionado} {tipoDia ? `· ${tipoDia}` : ''}
@@ -142,11 +122,8 @@ export default function Dashboard() {
             <p style={{ color: '#A08060', fontSize: '14px' }}>Aún no tienes ejercicios asignados.</p>
           ) : (
             ejerciciosDia.map((e: any) => (
-              <div
-                key={e.id}
-                onClick={() => router.push(`/ejercicio/${e.ejercicios?.id ?? e.id}`)}
-                style={{ padding: '14px', borderRadius: '10px', border: '1px solid #E8D9CC', cursor: 'pointer', marginBottom: '10px' }}
-              >
+              <div key={e.id} onClick={() => router.push(`/ejercicio/${e.ejercicios?.id ?? e.id}`)}
+                style={{ padding: '14px', borderRadius: '10px', border: '1px solid #E8D9CC', cursor: 'pointer', marginBottom: '10px' }}>
                 <div style={{ fontWeight: 600, color: '#3D2B1F' }}>{e.ejercicios?.nombre}</div>
                 <div style={{ color: '#A08060', fontSize: '13px' }}>{e.ejercicios?.categoria} · {e.series} series · {e.repeticiones} reps</div>
               </div>
